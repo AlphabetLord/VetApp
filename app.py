@@ -119,14 +119,6 @@ Do not use emojis in the output. Maintain an objective, highly professional corp
 with st.sidebar:
     st.markdown("### SYSTEM CONTROLS")
    
-    # Model Router
-    selected_model = st.selectbox(
-        "AI ENGINE ENGINE PRO LEVEL",
-        options=["Gemini Pro (gemini-2.5-pro)", "ChatGPT Pro (gpt-4o)", "Claude Pro (claude-3-5-sonnet)"],
-        index=0,
-        help="Select frontier tier engine router targeting complex multi-modal analysis."
-    )
-   
     st.markdown("---")
     st.markdown("### CLINICIAN REGISTRY")
    
@@ -297,7 +289,7 @@ with tab_analysis:
             custom_driver_override = st.text_area("Specific Driver Context Injection (Overriding Prompt Variables)", placeholder="e.g., Focus specifically on distal margins of third metatarsal structure.")
 
         with col_analysis_engine:
-            st.markdown(f"##### Engine Execution Sandbox via {selected_model}")
+            st.markdown("##### Engine Execution Sandbox via Gemini 3.5 Flash")
            
             # Text area displaying the prompt tracking matrix
             with st.expander("Show Injected Framework System Directive Architecture", expanded=False):
@@ -336,7 +328,7 @@ ADDITIONAL DRIVER CONTEXT:
 Analyse the attached diagnostic image and produce the standardized report per the system directive."""
 
                         response = client.models.generate_content(
-                            model="gemini-2.5-pro",
+                            model="gemini-2.5-flash",
                             contents=[pil_image, context_prompt],
                             config=types.GenerateContentConfig(
                                 system_instruction=SYSTEM_INSTRUCTION,
@@ -373,7 +365,7 @@ Analyse the attached diagnostic image and produce the standardized report per th
                         "clinician": active_pt["clinician"],
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "modality": scan_modality,
-                        "engine_used": selected_model,
+                        "engine_used": "Gemini 3.5 Flash",
                         "content": generation_output
                     }
                     st.session_state["reports"].append(new_report_record)
