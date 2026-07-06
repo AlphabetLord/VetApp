@@ -540,14 +540,14 @@ class RadiologyPDF(FPDF):
         )
 
     def section_header(self, title: str):
-        self.ln(4)
+        self.ln(6)
         self.set_font("Helvetica", "B", 11)
         self.set_text_color(*self.TEXT_DARK)
         self.set_fill_color(*self.LIGHT_BG)
         self.cell(0, 8, title, ln=True, fill=True)
         self.set_draw_color(*self.BORDER_GRAY)
         self.line(10, self.get_y(), 200, self.get_y())
-        self.ln(2)
+        self.ln(6)
 
     def meta_row(self, label: str, value: str):
         self.set_font("Helvetica", "B", 9)
@@ -580,35 +580,29 @@ class RadiologyPDF(FPDF):
                 else:
                     # Subsection (###, ####, #####, ######) → bold line
                     font_size = max(8, 11 - level)  # ### = 8pt, #### = 7pt, etc. (min 8)
-                    self.ln(3)
+                    self.ln(6)
                     self.set_font("Helvetica", "B", font_size)
                     self.set_text_color(*self.BLUE)
                     self.multi_cell(180, 5, title)
                     self.set_text_color(*self.TEXT_DARK)
-                    self.ln(1)
+                    self.ln(6)
                 continue
 
             # ── Bullet point (- or * at start of line) ──
             if re.match(r"^\s*[-*]\s+", line):
                 clean = re.sub(r"^\s*[-*]\s+", "", line)
-                clean = clean.replace("**", "").replace("*", "")
+                clean = clean.replace("**", "").replace("*", "").strip()
                 self.set_font("Helvetica", "", 9)
-                self.cell(8, 5, "")
-                self.cell(4, 5, "-")
-                self.multi_cell(178, 5, clean.strip())
+                self.multi_cell(180, 5, f"- {clean}")
                 continue
 
             # ── Numbered list (1. 2. etc.) ──
             m = re.match(r"^(\d+)\.\s+(.*)", line)
             if m:
                 num, content = m.group(1), m.group(2)
-                content = content.replace("**", "").replace("*", "")
+                content = content.replace("**", "").replace("*", "").strip()
                 self.set_font("Helvetica", "", 9)
-                self.cell(8, 5, "")
-                self.set_font("Helvetica", "B", 9)
-                self.cell(8, 5, f"{num}.")
-                self.set_font("Helvetica", "", 9)
-                self.multi_cell(174, 5, content.strip())
+                self.multi_cell(180, 5, f"{num}. {content}")
                 continue
 
             # ── Regular paragraph text ──
@@ -638,7 +632,7 @@ def _sanitize(text: str) -> str:
 def generate_report_pdf(report: dict, patient: dict) -> bytes:
     """Build a formal radiology PDF and return bytes."""
     pdf = RadiologyPDF()
-    pdf.set_auto_page_break(auto=True, margin=25)
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
     # ── Patient Information table ──
