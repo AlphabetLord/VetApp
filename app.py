@@ -569,37 +569,40 @@ class RadiologyPDF(FPDF):
                 self.ln(2)
                 continue
 
-            # ## Section header
-            if line.startswith("## "):
-                self.section_header(line[3:].strip())
+            # ── Any markdown heading (##, ###, ####, etc.) ──
+            heading_match = re.match(r"^(#{2,6})\s+(.*)", line)
+            if heading_match:
+                level = len(heading_match.group(1))  # 2 = ##, 3 = ###, etc.
+                title = heading_match.group(2).replace("**", "").replace("*", "").strip()
+                if level == 2:
+                    # Major section → styled banner
+                    self.section_header(title)
+                else:
+                    # Subsection (###, ####, #####, ######) → bold line
+                    font_size = max(8, 11 - level)  # ### = 8pt, #### = 7pt, etc. (min 8)
+                    self.ln(3)
+                    self.set_font("Helvetica", "B", font_size)
+                    self.set_text_color(*self.BLUE)
+                    self.multi_cell(180, 5, title)
+                    self.set_text_color(*self.TEXT_DARK)
+                    self.ln(1)
                 continue
 
-            # ### Subsection header
-            if line.startswith("### "):
-                self.ln(2)
-                self.set_font("Helvetica", "B", 10)
-                self.set_text_color(*self.BLUE)
-                self.cell(0, 6, line[4:].strip(), ln=True)
-                self.set_text_color(*self.TEXT_DARK)
-                self.ln(1)
-                continue
-
-            # Bullet point (- or * or •)
-            if re.match(r"^\s*[-*\u2022]\s+", line):
-                clean = re.sub(r"^\s*[-*\u2022]\s+", "", line)
-                clean = clean.replace("**", "")
+            # ── Bullet point (- or * at start of line) ──
+            if re.match(r"^\s*[-*]\s+", line):
+                clean = re.sub(r"^\s*[-*]\s+", "", line)
+                clean = clean.replace("**", "").replace("*", "")
                 self.set_font("Helvetica", "", 9)
-                x_start = self.get_x()
                 self.cell(8, 5, "")
                 self.cell(4, 5, "-")
                 self.multi_cell(178, 5, clean.strip())
                 continue
 
-            # Numbered list (1. 2. etc.)
+            # ── Numbered list (1. 2. etc.) ──
             m = re.match(r"^(\d+)\.\s+(.*)", line)
             if m:
                 num, content = m.group(1), m.group(2)
-                content = content.replace("**", "")
+                content = content.replace("**", "").replace("*", "")
                 self.set_font("Helvetica", "", 9)
                 self.cell(8, 5, "")
                 self.set_font("Helvetica", "B", 9)
@@ -608,7 +611,7 @@ class RadiologyPDF(FPDF):
                 self.multi_cell(174, 5, content.strip())
                 continue
 
-            # Regular paragraph text
+            # ── Regular paragraph text ──
             clean = line.replace("**", "").replace("*", "").strip()
             if clean:
                 self.set_font("Helvetica", "", 9)
