@@ -592,7 +592,7 @@ class RadiologyPDF(FPDF):
                 x_start = self.get_x()
                 self.cell(8, 5, "")
                 self.cell(4, 5, "-")
-                self.multi_cell(0, 5, clean.strip())
+                self.multi_cell(178, 5, clean.strip())
                 continue
 
             # Numbered list (1. 2. etc.)
@@ -605,14 +605,14 @@ class RadiologyPDF(FPDF):
                 self.set_font("Helvetica", "B", 9)
                 self.cell(8, 5, f"{num}.")
                 self.set_font("Helvetica", "", 9)
-                self.multi_cell(0, 5, content.strip())
+                self.multi_cell(174, 5, content.strip())
                 continue
 
             # Regular paragraph text
             clean = line.replace("**", "").replace("*", "").strip()
             if clean:
                 self.set_font("Helvetica", "", 9)
-                self.multi_cell(0, 5, clean)
+                self.multi_cell(180, 5, clean)
 
 
 def _sanitize(text: str) -> str:
