@@ -541,6 +541,7 @@ class RadiologyPDF(FPDF):
 
     def section_header(self, title: str):
         self.ln(6)
+        self.set_x(10)
         self.set_font("Helvetica", "B", 11)
         self.set_text_color(*self.TEXT_DARK)
         self.set_fill_color(*self.LIGHT_BG)
@@ -581,6 +582,7 @@ class RadiologyPDF(FPDF):
                     # Subsection (###, ####, #####, ######) → bold line
                     font_size = max(8, 11 - level)  # ### = 8pt, #### = 7pt, etc. (min 8)
                     self.ln(6)
+                    self.set_x(10)
                     self.set_font("Helvetica", "B", font_size)
                     self.set_text_color(*self.BLUE)
                     self.multi_cell(180, 5, title)
@@ -588,26 +590,11 @@ class RadiologyPDF(FPDF):
                     self.ln(6)
                 continue
 
-            # ── Bullet point (- or * at start of line) ──
-            if re.match(r"^\s*[-*]\s+", line):
-                clean = re.sub(r"^\s*[-*]\s+", "", line)
-                clean = clean.replace("**", "").replace("*", "").strip()
-                self.set_font("Helvetica", "", 9)
-                self.multi_cell(180, 5, f"- {clean}")
-                continue
-
-            # ── Numbered list (1. 2. etc.) ──
-            m = re.match(r"^(\d+)\.\s+(.*)", line)
-            if m:
-                num, content = m.group(1), m.group(2)
-                content = content.replace("**", "").replace("*", "").strip()
-                self.set_font("Helvetica", "", 9)
-                self.multi_cell(180, 5, f"{num}. {content}")
-                continue
-
-            # ── Regular paragraph text ──
+            # ── All list items (numbered or bulleted) & regular paragraphs ──
+            # Remove special indent handling: clean bold symbols and render as standard full-width block
             clean = line.replace("**", "").replace("*", "").strip()
             if clean:
+                self.set_x(10)
                 self.set_font("Helvetica", "", 9)
                 self.multi_cell(180, 5, clean)
 
@@ -652,18 +639,20 @@ def generate_report_pdf(report: dict, patient: dict) -> bytes:
 
     # ── Clinical History ──
     pdf.section_header("Clinical History")
+    pdf.set_x(10)
     pdf.set_font("Helvetica", "", 9)
     history_text = _sanitize(
         f"{patient.get('condition', '')}. {patient.get('history', '')}".strip(". ")
     )
-    pdf.multi_cell(0, 5, history_text if history_text else "No clinical history provided.")
+    pdf.multi_cell(180, 5, history_text if history_text else "No clinical history provided.")
     pdf.ln(2)
 
     # ── Technique ──
     pdf.section_header("Technique")
+    pdf.set_x(10)
     pdf.set_font("Helvetica", "", 9)
     pdf.multi_cell(
-        0, 5,
+        180, 5,
         _sanitize(
             f"{report.get('modality','—')}, {report.get('projection','—')} views, "
             f"{report.get('region','—')} region. Obtained according to departmental protocol."
