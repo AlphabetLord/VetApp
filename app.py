@@ -591,7 +591,7 @@ class RadiologyPDF(FPDF):
                 self.set_font("Helvetica", "", 9)
                 x_start = self.get_x()
                 self.cell(8, 5, "")
-                self.cell(4, 5, chr(8226))
+                self.cell(4, 5, "-")
                 self.multi_cell(0, 5, clean.strip())
                 continue
 
