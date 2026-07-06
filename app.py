@@ -615,6 +615,23 @@ class RadiologyPDF(FPDF):
                 self.multi_cell(0, 5, clean)
 
 
+def _sanitize(text: str) -> str:
+    """Replace common Unicode characters unsupported by Helvetica/Arial."""
+    return (
+        text
+        .replace("\u2022", "-")   # •
+        .replace("\u2014", "-")   # —
+        .replace("\u2013", "-")   # –
+        .replace("\u2018", "'")   # '
+        .replace("\u2019", "'")   # '
+        .replace("\u201c", '"')   # "
+        .replace("\u201d", '"')   # "
+        .replace("\u2026", "...")  # …
+        .replace("\u2192", "->")  # →
+        .replace("\u00b7", "-")   # ·
+    )
+
+
 def generate_report_pdf(report: dict, patient: dict) -> bytes:
     """Build a formal radiology PDF and return bytes."""
     pdf = RadiologyPDF()
@@ -623,25 +640,25 @@ def generate_report_pdf(report: dict, patient: dict) -> bytes:
 
     # ── Patient Information table ──
     pdf.section_header("Patient Information")
-    pdf.meta_row("Name:", patient.get("name", "—"))
-    pdf.meta_row("Species / Breed:", f"{patient.get('species','—')} / {patient.get('breed','—')}")
+    pdf.meta_row("Name:", _sanitize(patient.get("name", "—")))
+    pdf.meta_row("Species / Breed:", _sanitize(f"{patient.get('species','—')} / {patient.get('breed','—')}"))
     pdf.ln(5)
-    pdf.meta_row("Age / Sex:", f"{patient.get('age','—')} / {patient.get('sex','—')}")
+    pdf.meta_row("Age / Sex:", _sanitize(f"{patient.get('age','—')} / {patient.get('sex','—')}"))
     pdf.meta_row("Weight:", f"{patient.get('weight','—')} kg")
     pdf.ln(5)
-    pdf.meta_row("Owner:", patient.get("owner", "—"))
+    pdf.meta_row("Owner:", _sanitize(patient.get("owner", "—")))
     pdf.meta_row("Medical Record:", patient.get("id", "—"))
     pdf.ln(5)
-    pdf.meta_row("Referring Clinician:", report.get("clinician", "—"))
+    pdf.meta_row("Referring Clinician:", _sanitize(report.get("clinician", "—")))
     pdf.meta_row("Date of Study:", report.get("timestamp", "—"))
     pdf.ln(3)
 
     # ── Clinical History ──
     pdf.section_header("Clinical History")
     pdf.set_font("Helvetica", "", 9)
-    history_text = (
-        f"{patient.get('condition', '')}. {patient.get('history', '')}"
-    ).strip(". ")
+    history_text = _sanitize(
+        f"{patient.get('condition', '')}. {patient.get('history', '')}".strip(". ")
+    )
     pdf.multi_cell(0, 5, history_text if history_text else "No clinical history provided.")
     pdf.ln(2)
 
@@ -650,13 +667,15 @@ def generate_report_pdf(report: dict, patient: dict) -> bytes:
     pdf.set_font("Helvetica", "", 9)
     pdf.multi_cell(
         0, 5,
-        f"{report.get('modality','—')}, {report.get('projection','—')} views, "
-        f"{report.get('region','—')} region. Obtained according to departmental protocol."
+        _sanitize(
+            f"{report.get('modality','—')}, {report.get('projection','—')} views, "
+            f"{report.get('region','—')} region. Obtained according to departmental protocol."
+        ),
     )
     pdf.ln(2)
 
-    # ── AI Report Body ──
-    pdf.body_text(report.get("content", ""))
+    # ── AI Report Body (sanitized) ──
+    pdf.body_text(_sanitize(report.get("content", "")))
 
     # ── Signature block ──
     pdf.ln(8)
