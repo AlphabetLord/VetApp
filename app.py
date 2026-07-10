@@ -6,8 +6,7 @@ import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from PIL import Image
-from google import genai
-from google.genai import types
+import ollama
 from fpdf import FPDF
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -270,15 +269,10 @@ if "selected_patient_id" not in st.session_state:
     st.session_state["selected_patient_id"] = None
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GEMINI CLIENT (cached across reruns)
+# OLLAMA MODEL CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
-MODEL_ID = "gemini-2.5-flash"
-ENGINE_LABEL = "Gemini 2.5 Flash"
-
-
-@st.cache_resource(show_spinner=False)
-def get_gemini_client() -> genai.Client:
-    return genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+MODEL_ID = "dcarrascosa/medgemma-1.5-4b-it:Q4_K_M"
+ENGINE_LABEL = "MedGemma (Local via Ollama)"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -995,9 +989,7 @@ with tab_analysis:
             if run_btn:
                 with st.spinner("Analysing image — this may take a moment..."):
                     try:
-                        client = get_gemini_client()
                         uploaded_scan.seek(0)
-                        pil_image = Image.open(uploaded_scan)
 
                         # Build structured context prompt
                         context_prompt = f"""PATIENT DEMOGRAPHICS:
@@ -1028,25 +1020,24 @@ Analyse the attached diagnostic image and produce the standardized radiographic 
                         # Use the active (potentially edited) system prompt
                         active_system_prompt = st.session_state["active_prompt"]
 
-                        response = client.models.generate_content(
+                        # Call local Ollama with MedGemma model
+                        response = ollama.chat(
                             model=MODEL_ID,
-                            contents=[pil_image, context_prompt],
-                            config=types.GenerateContentConfig(
-                                system_instruction=active_system_prompt,
-                                temperature=0.3,
-                                max_output_tokens=8192,
-                            ),
+                            messages=[{
+                                'role': 'user',
+                                'content': active_system_prompt + "\n\n" + context_prompt,
+                                'images': [uploaded_scan.getvalue()]
+                            }]
                         )
+                        generation_output = response['message']['content']
 
-                        if not response.text:
+                        if not generation_output:
                             raise RuntimeError("The model returned an empty response.")
-
-                        generation_output = response.text
 
                     except Exception as exc:
                         st.error(
-                            f"**API Error:** {exc}\n\n"
-                            "Check your API key in `.streamlit/secrets.toml` and try again."
+                            f"**Model Error:** {exc}\n\n"
+                            "Ensure Ollama is running locally and the model is pulled."
                         )
                         st.stop()
 
