@@ -271,7 +271,7 @@ if "selected_patient_id" not in st.session_state:
 # ══════════════════════════════════════════════════════════════════════════════
 # OLLAMA MODEL CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
-MODEL_ID = "dcarrascosa/medgemma-1.5-4b-it:Q4_K_M"
+MODEL_ID = "hf.co/mradermacher/medgemma-1.5-4b-it-GGUF:Q4_K_M"
 ENGINE_LABEL = "MedGemma (Local via Ollama)"
 
 
